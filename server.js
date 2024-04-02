@@ -26,10 +26,13 @@ const mqttOptions = {
 const mqttClient = mqtt.connect(mqttOptions);
 
 
-function check_plate(License_ID){
-    connection.query('SELECT * FROM L_Plate WHERE License_ID = ?', [License_ID], (err, result) => {
+function check_plate(License_ID, User_ID){
+    connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
         if (err) throw err;
-        mqttClient.publish('gate/open', '1');
+        if (result.length <1)
+            mqttClient.publish('gate/open', '0');
+        else
+            mqttClient.publish('gate/open', '1');
     });
 }
 
@@ -44,7 +47,8 @@ mqttClient.on('error', function (error) {
 
 mqttClient.on('message', function (topic, message) {
     console.log('Received MQTT message:', topic, message.toString());
-    check_plate(message.toString())
+    const infor = message.toString().split(" ");
+    check_plate(infor[0], infor[1])
     // You can handle incoming MQTT messages here
 });
 
