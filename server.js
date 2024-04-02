@@ -95,7 +95,9 @@ const server = http.createServer(async (req, res) => {
                 });
             } else if (parsedUrl.pathname === '/history-event' && req.method === 'GET') {
                 // Assuming the user is logged in and authenticated
-                const { License_ID } = JSON.parse(body);
+                //const { License_ID } = JSON.parse(body);
+                License_ID = parsedQuery.license_id;
+                console.log(parsedQuery.license_id)
                 connection.query('SELECT * FROM Event_DB WHERE License_ID = ?', [License_ID], (err, result) => {
                     if (err) throw err;
                     console.log(result);
