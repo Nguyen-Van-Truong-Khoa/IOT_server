@@ -25,15 +25,26 @@ const mqttOptions = {
 // Initialize the MQTT client
 const mqttClient = mqtt.connect(mqttOptions);
 
-function store_history(License_ID, User_ID, timestamp){
-    let event_type = true;
+function take_state(License_ID, User_ID){
+    let event_type = 1;
     connection.query('SELECT A.Event_Type FROM (SELECT E.ID, E.Event_Type FROM L_Plate AS L JOIN Event_DB AS E WHERE L.License_ID = E.License_ID AND L.License_ID = "30F5594" AND L.User_ID = "0004575665" ORDER BY E.ID DESC LIMIT 1) AS A', [License_ID,User_ID], (err, result) => {
         if (err)  
-            event_type = false
+            event_type = 0;
         else
-            event_type = !((Boolean)(result));
-        console.log(event_type.toString())
+            event_type = (result[0].Event_Type == "1") ? 0 : 1;
+        console.log(event_type)
     });
+    return event_type;
+}
+
+
+function store_history(License_ID, User_ID, timestamp){
+    let event_type = take_state(License_ID, User_ID);
+    connection.query('INSERT INTO Event_DB (License_ID, Event_Type, Timestamp) VALUES (?,?,?)', [License_ID,event_type, timestamp], (err, result) => {
+        if (err)  throw err;
+        console.log("Store successfully")
+    });
+    //console.log("Store successfully")
 }
 
 function check_plate(License_ID, User_ID, timestamp){
