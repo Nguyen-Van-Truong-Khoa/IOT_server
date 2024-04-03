@@ -26,39 +26,37 @@ const mqttOptions = {
 // Initialize the MQTT client
 const mqttClient = mqtt.connect(mqttOptions);
 
-function take_state(License_ID, User_ID){
-    let event_type = 1;
-    connection.query('SELECT A.Event_Type FROM (SELECT E.ID, E.Event_Type FROM L_Plate AS L JOIN Event_DB AS E WHERE L.License_ID = E.License_ID AND L.License_ID = "30F5594" AND L.User_ID = "0004575665" ORDER BY E.ID DESC LIMIT 1) AS A', [License_ID,User_ID], (err, result) => {
-        if (err)  
-            event_type = 0;
-        else
-            event_type = (result[0].Event_Type == "1") ? 0 : 1;
-        console.log(event_type)
-    });
-    return event_type;
-}
-
-
-function store_history(License_ID, User_ID, timestamp){
-    let event_type = take_state(License_ID, User_ID);
-    connection.query('INSERT INTO Event_DB (License_ID, Event_Type, Timestamp) VALUES (?,?,?)', [License_ID,event_type, timestamp], (err, result) => {
-        if (err)  throw err;
-        console.log("Store successfully")
-    });
-    //console.log("Store successfully")
-}
-
 var slideTimer = (function(){
     var timer = 0;
-
-    // Because the inner function is bound to the slideTimer variable,
-    // it will remain in score and will allow the timer variable to be manipulated.
-
     return function(callback, ms){
          clearTimeout (timer);
          timer = setTimeout(callback, ms);
     };  
 })();
+
+function store_history(License_ID, User_ID, timestamp){
+    let event_type = 1;
+
+    connection.query('SELECT A.Event_Type FROM (SELECT E.ID, E.Event_Type FROM L_Plate AS L JOIN Event_DB AS E WHERE L.License_ID = E.License_ID AND L.License_ID = "30F5594" AND L.User_ID = "0004575665" ORDER BY E.ID DESC LIMIT 1) AS A', [License_ID,User_ID], (err, result) => {
+        if (err) throw err;
+        if (result.length<1)
+            event_type = 1;
+        if (result.length>0)
+            event_type = (result[0].Event_Type == "1") ? 0 : 1;
+        console.log("root 2" + event_type)
+    });
+
+    slideTimer(function(){
+    console.log("root 3 " + event_type);
+    connection.query('INSERT INTO Event_DB (License_ID, Event_Type, Timestamp) VALUES (?,?,?)', [License_ID,event_type, timestamp], (err) => {
+        if (err)  throw err;
+        console.log("Store successfully")
+    })}, 1000);
+
+    //console.log("Store successfully")
+}
+
+
 
 function check_plate(License_ID, User_ID, timestamp){
     connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
@@ -66,11 +64,14 @@ function check_plate(License_ID, User_ID, timestamp){
         slideTimer(function() {
             //execSync('sleep 4');
             if (result.length >= 1)
+            {
                 mqttClient.publish('gate/open', '1');
+                console.log("sent message");
+                store_history(License_ID, User_ID, timestamp);
+            }
             if (result.length < 1)
                 mqttClient.publish('gate/open', '0');
-            console.log("sent message");
-            store_history(License_ID, User_ID, timestamp);
+            
           }, 4000);
 
     });
