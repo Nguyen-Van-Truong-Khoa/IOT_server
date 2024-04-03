@@ -3,6 +3,7 @@ const url = require('url');
 const querystring = require('querystring');
 const mysql = require('mysql');
 var mqtt = require('mqtt')
+//const {execSync} = require('child_process');
 
 const connection = mysql.createConnection({
     host: 'sql6.freesqldatabase.com',
@@ -47,15 +48,28 @@ function store_history(License_ID, User_ID, timestamp){
     //console.log("Store successfully")
 }
 
+var slideTimer = (function(){
+    var timer = 0;
+
+    // Because the inner function is bound to the slideTimer variable,
+    // it will remain in score and will allow the timer variable to be manipulated.
+
+    return function(callback, ms){
+         clearTimeout (timer);
+         timer = setTimeout(callback, ms);
+    };  
+})();
 
 function check_plate(License_ID, User_ID, timestamp){
     connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
         if (err) throw err;
-        setTimeout(function() {
-            if (result.length <1)
-                mqttClient.publish('gate/open', '0');
-            else
+        slideTimer(function() {
+            //execSync('sleep 4');
+            if (result.length >= 1)
                 mqttClient.publish('gate/open', '1');
+            if (result.length < 1)
+                mqttClient.publish('gate/open', '0');
+            console.log("sent message");
             store_history(License_ID, User_ID, timestamp);
           }, 4000);
 
