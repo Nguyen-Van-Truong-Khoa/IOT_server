@@ -47,20 +47,18 @@ function store_history(License_ID, User_ID, timestamp){
     //console.log("Store successfully")
 }
 
+
 function check_plate(License_ID, User_ID, timestamp){
     connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
         if (err) throw err;
-        console.log('Starting...');
-    setTimeout(() => {
-        console.log('Delayed task...');
-    }, 5000); // 5000 milliseconds = 5 seconds
-    console.log('Continuing...');
-
-        if (result.length <1)
-            mqttClient.publish('gate/open', '0');
-        else
-            mqttClient.publish('gate/open', '1');
+        setTimeout(function() {
+            if (result.length <1)
+                mqttClient.publish('gate/open', '0');
+            else
+                mqttClient.publish('gate/open', '1');
             store_history(License_ID, User_ID, timestamp);
+          }, 4000);
+
     });
 }
 
