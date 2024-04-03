@@ -53,7 +53,7 @@ function check_plate(License_ID, User_ID, timestamp){
         console.log('Starting...');
     setTimeout(() => {
         console.log('Delayed task...');
-    }, 2000); // 5000 milliseconds = 5 seconds
+    }, 5000); // 5000 milliseconds = 5 seconds
     console.log('Continuing...');
 
         if (result.length <1)
