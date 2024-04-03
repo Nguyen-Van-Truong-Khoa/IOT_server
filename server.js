@@ -25,14 +25,25 @@ const mqttOptions = {
 // Initialize the MQTT client
 const mqttClient = mqtt.connect(mqttOptions);
 
+function store_history(License_ID, User_ID, timestamp){
+    let event_type = true;
+    connection.query('SELECT A.Event_Type FROM (SELECT E.ID, E.Event_Type FROM L_Plate AS L JOIN Event_DB AS E WHERE L.License_ID = E.License_ID AND L.License_ID = "30F5594" AND L.User_ID = "0004575665" ORDER BY E.ID DESC LIMIT 1) AS A', [License_ID,User_ID], (err, result) => {
+        if (err)  
+            event_type = false
+        else
+            event_type = !((Boolean)(result));
+        console.log(event_type.toString())
+    });
+}
 
-function check_plate(License_ID, User_ID){
+function check_plate(License_ID, User_ID, timestamp){
     connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
         if (err) throw err;
         if (result.length <1)
             mqttClient.publish('gate/open', '0');
         else
             mqttClient.publish('gate/open', '1');
+            store_history(License_ID, User_ID, timestamp);
     });
 }
 
@@ -48,7 +59,7 @@ mqttClient.on('error', function (error) {
 mqttClient.on('message', function (topic, message) {
     console.log('Received MQTT message:', topic, message.toString());
     const infor = message.toString().split(" ");
-    check_plate(infor[0], infor[1])
+    check_plate(infor[0], infor[1], infor [2])
     // You can handle incoming MQTT messages here
 });
 
