@@ -5,11 +5,24 @@ const mysql = require('mysql');
 var mqtt = require('mqtt')
 //const {execSync} = require('child_process');
 
+// const express = require('express');
+// const cors = require('cors'); // Import the CORS middleware
+
+// const app = express();
+
+// // Enable CORS for all domains
+// app.use((req, res, next) => {
+//     res.header('Access-Control-Allow-Origin', '*');
+//     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+//     res.header('Access-Control-Allow-Headers', 'Content-Type');
+//     next();
+//   });
+
 const connection = mysql.createConnection({
     host: 'sql6.freesqldatabase.com',
-    user: 'sql6695402',
-    password: 'MNF9RjyaPA',
-    database: 'sql6695402',
+    user: 'sql6697209',
+    password: 'yQCksDWPCG',
+    database: 'sql6697209',
     port: 3306
 });
 
@@ -62,7 +75,6 @@ function check_plate(License_ID, User_ID, timestamp){
     connection.query('SELECT * FROM L_Plate WHERE License_ID = ? AND User_ID = ?', [License_ID,User_ID], (err, result) => {
         if (err) throw err;
         slideTimer(function() {
-            //execSync('sleep 4');
             if (result.length >= 1)
             {
                 mqttClient.publish('gate/open', '1');
@@ -90,7 +102,6 @@ mqttClient.on('message', function (topic, message) {
     console.log('Received MQTT message:', topic, message.toString());
     const infor = message.toString().split(" ");
     check_plate(infor[0], infor[1], infor [2])
-    // You can handle incoming MQTT messages here
 });
 
 
@@ -105,8 +116,6 @@ const server = http.createServer(async (req, res) => {
 
     req.on('end', async () => {
         try {
-            //connection.connect();
-
             if (parsedUrl.pathname === '/login' && req.method === 'POST') {
                 const { username, password } = JSON.parse(body);
                 connection.query('SELECT User_DB.User_ID, User_DB.Password, User_DB.Phone, L_Plate.License_ID FROM User_DB LEFT JOIN L_Plate ON User_DB.User_ID = L_Plate.User_ID WHERE User_DB.User_ID = ? AND User_DB.Password = ?', [username, password], (err, result) => {
